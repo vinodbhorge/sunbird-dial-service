@@ -20,6 +20,30 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      elasticsearch:
+        image: elasticsearch:6.3.2
+        env:
+          discovery.type: single-node
+          bootstrap.memory_lock: "true"
+          "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 5
+
+      cassandra:
+        image: cassandra:3.11
+        ports:
+          - 9042:9042
+        options: >-
+          --health-cmd "cqlsh -e 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v4
 
@@ -30,20 +54,31 @@ jobs:
         distribution: 'adopt'
         cache: 'maven'
 
-    - name: Install Elasticsearch
-      run: |
-        sudo sysctl -w vm.max_map_count=262144
-        wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.3.2.deb
-        sudo dpkg -i --force-confnew elasticsearch-6.3.2.deb
-        sudo service elasticsearch restart
-        sleep 10
-
     - name: Create logs directory
       run: |
         mkdir -p ~/logs/dialcode/
         find . -type f -name "logback.xml" -print0 | xargs -0 sed -i -e 's/\/data\/logs/logs/g'
         find . -type f -name "application.conf" -print0 | xargs -0 sed -i -e 's/\/data\//~\//g'
         find . -type f -name "*.java" -print0 | xargs -0 sed -i -e 's/\/data\//~\//g'
+
+    - name: Add Log4j2 Core Dependency
+      run: |
+        echo '<dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+          <version>2.20.0</version>
+        </dependency>' > log4j2-core.xml
+        xmlstarlet ed -L -s "//dependencies" -t elem -n "dependency" -v "" pom.xml
+        xmlstarlet ed -L -i "//dependencies/dependency[last()]" -t elem -n "groupId" -v "org.apache.logging.log4j" pom.xml
+        xmlstarlet ed -L -i "//dependencies/dependency[last()]" -t elem -n "artifactId" -v "log4j-core" pom.xml
+        xmlstarlet ed -L -i "//dependencies/dependency[last()]" -t elem -n "version" -v "2.20.0" pom.xml
+
+    - name: Wait for Services
+      run: |
+        echo "Waiting for Elasticsearch..."
+        timeout 60 bash -c 'until curl -s http://localhost:9200/_cluster/health | grep -q "\"status\":\"green\"\\|\"status\":\"yellow\""; do sleep 2; done'
+        echo "Waiting for Cassandra..."
+        timeout 60 bash -c 'until cqlsh -e "SELECT 1" > /dev/null 2>&1; do sleep 2; done'
 
     - name: Build with Maven and Generate Coverage Report
       run: mvn clean scoverage:report
