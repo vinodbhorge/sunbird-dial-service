@@ -32,7 +32,8 @@ jobs:
 
     - name: Install Elasticsearch
       run: |
-        curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.3.2.deb
+        sudo sysctl -w vm.max_map_count=262144
+        wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.3.2.deb
         sudo dpkg -i --force-confnew elasticsearch-6.3.2.deb
         sudo service elasticsearch restart
         sleep 10
