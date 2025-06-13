@@ -26,24 +26,35 @@ jobs:
           discovery.type: single-node
           bootstrap.memory_lock: "true"
           xpack.security.enabled: false
-          "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+          "ES_JAVA_OPTS": "-Xms1g -Xmx1g"
+          cluster.name: "docker-cluster"
+          network.host: "0.0.0.0"
         ports:
           - 9200:9200
         options: >-
           --health-cmd "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"
-          --health-interval 10s
+          --health-interval 20s
           --health-timeout 10s
-          --health-retries 5
+          --health-retries 10
+          --memory=2g
+          --ulimit nofile=65535:65535
+          --ulimit memlock=-1:-1
 
       cassandra:
         image: cassandra:3.11
+        env:
+          MAX_HEAP_SIZE: 512M
+          HEAP_NEWSIZE: 128M
+          CASSANDRA_CLUSTER_NAME: "Test Cluster"
         ports:
           - 9042:9042
         options: >-
           --health-cmd "cqlsh -e 'SELECT 1'"
-          --health-interval 10s
+          --health-interval 20s
           --health-timeout 10s
-          --health-retries 5
+          --health-retries 10
+          --memory=1g
+          --ulimit nofile=100000:100000
 
     steps:
     - uses: actions/checkout@v4
