@@ -1,6 +1,7 @@
 package utils;
 
 import commons.AppConfig;
+import commons.JedisFactory;
 import dbstore.DialCodeStore;
 import dbstore.SystemConfigStore;
 import org.apache.commons.lang3.StringUtils;
@@ -75,6 +76,9 @@ public class DialCodeGenerator {
 	 * @throws Exception
 	 */
 	private Double getMaxIndex(Double masterDBIndex) throws Exception {
+		if (!JedisFactory.isEnabled()) {
+			return masterDBIndex + 1;
+		}
 		double index = RedisStoreUtil.getNodePropertyIncVal("domain", "dialcode", "max_index");
 		if (index < masterDBIndex) {
 		    String message = "Redis doesn't have the latest max index. Please set max index in redis as : " + masterDBIndex + " to enable the service.";

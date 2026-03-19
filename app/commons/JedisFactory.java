@@ -9,6 +9,7 @@ import utils.DialCodeEnum;
 public class JedisFactory {
 
 	private static JedisPool jedisPool;
+	private static boolean redisEnabled = AppConfig.getBoolean("redis.cache.enabled", false);
 
 	private static int maxConnections = 128;
 	private static String host = "localhost";
@@ -16,17 +17,25 @@ public class JedisFactory {
 	private static int index = 0;
 
 	static {
-		if (AppConfig.config.hasPath("redis.host")) host = AppConfig.config.getString("redis.host");
-		if (AppConfig.config.hasPath("redis.port")) port = AppConfig.config.getInt("redis.port");
-		if (AppConfig.config.hasPath("redis.maxConnections")) maxConnections = AppConfig.config.getInt("redis.maxConnections");
-		if (AppConfig.config.hasPath("redis.dbIndex")) index = AppConfig.config.getInt("redis.dbIndex");
-		JedisPoolConfig config = new JedisPoolConfig();
-		config.setMaxTotal(maxConnections);
-		config.setBlockWhenExhausted(true);
-		jedisPool = new JedisPool(config, host, port);
+		if (redisEnabled) {
+			if (AppConfig.config.hasPath("redis.host")) host = AppConfig.config.getString("redis.host");
+			if (AppConfig.config.hasPath("redis.port")) port = AppConfig.config.getInt("redis.port");
+			if (AppConfig.config.hasPath("redis.maxConnections")) maxConnections = AppConfig.config.getInt("redis.maxConnections");
+			if (AppConfig.config.hasPath("redis.dbIndex")) index = AppConfig.config.getInt("redis.dbIndex");
+			JedisPoolConfig config = new JedisPoolConfig();
+			config.setMaxTotal(maxConnections);
+			config.setBlockWhenExhausted(true);
+			jedisPool = new JedisPool(config, host, port);
+		}
+	}
+
+	public static boolean isEnabled() {
+		return redisEnabled;
 	}
 
 	public static Jedis getRedisConncetion() {
+		if (!redisEnabled)
+			throw new ServerException(DialCodeEnum.ERR_CACHE_CONNECTION_ERROR.name(), "Redis cache is disabled.");
 		try {
 			Jedis jedis = jedisPool.getResource();
 			if (index > 0)
@@ -38,6 +47,7 @@ public class JedisFactory {
 	}
 
 	public static void returnConnection(Jedis jedis) {
+		if (!redisEnabled) return;
 		try {
 			if (null != jedis)
 				jedisPool.returnResource(jedis);
