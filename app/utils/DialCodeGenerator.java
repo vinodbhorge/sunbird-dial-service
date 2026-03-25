@@ -1,6 +1,7 @@
 package utils;
 
 import commons.AppConfig;
+import commons.JedisFactory;
 import dbstore.DialCodeStore;
 import dbstore.SystemConfigStore;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +53,12 @@ public class DialCodeGenerator {
 				}
 			}
 		}
-		setMaxIndex(lastIndex);
+		// When Redis is enabled the counter lives in Redis; sync it back to Cassandra.
+		// When Redis is disabled each index was already committed atomically via CAS,
+		// so a plain write here would be redundant and unsafe under concurrency.
+		if (JedisFactory.isEnabled()) {
+			setMaxIndex(lastIndex);
+		}
 		return codes;
 	}
 
@@ -75,6 +81,11 @@ public class DialCodeGenerator {
 	 * @throws Exception
 	 */
 	private Double getMaxIndex(Double masterDBIndex) throws Exception {
+		if (!JedisFactory.isEnabled()) {
+			// Use a Cassandra LWT-based atomic increment so that concurrent
+			// requests and multiple service instances cannot allocate the same index.
+			return systemConfigStore.getAndIncrementDialCodeIndex();
+		}
 		double index = RedisStoreUtil.getNodePropertyIncVal("domain", "dialcode", "max_index");
 		if (index < masterDBIndex) {
 		    String message = "Redis doesn't have the latest max index. Please set max index in redis as : " + masterDBIndex + " to enable the service.";

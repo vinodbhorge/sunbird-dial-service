@@ -19,6 +19,7 @@ public interface IHealthCheckManager {
     Response getAllServiceHealth();
 
     static boolean checkRedisHealth(){
+        if (!JedisFactory.isEnabled()) return true;
         try {
             Jedis jedis = JedisFactory.getRedisConncetion();
             jedis.close();

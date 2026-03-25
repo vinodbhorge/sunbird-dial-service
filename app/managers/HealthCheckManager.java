@@ -4,6 +4,7 @@
  */
 package managers;
 
+import commons.JedisFactory;
 import commons.dto.Response;
 import commons.exception.ResponseCode;
 import telemetry.TelemetryManager;
@@ -39,20 +40,22 @@ public class HealthCheckManager extends BaseManager implements IHealthCheckManag
 
         allChecks.add(check);
         check = new HashMap<>();
-        try{
-            status = IHealthCheckManager.checkRedisHealth();
-            if(!status){
-                overAllHealth=false;
+        if (JedisFactory.isEnabled()) {
+            try {
+                status = IHealthCheckManager.checkRedisHealth();
+                if (!status) {
+                    overAllHealth = false;
+                }
+                check = generateCheck("redis cache", check, status);
+                TelemetryManager.log("redis cache " + CONNECTION_SUCCESS);
+            } catch (Exception e) {
+                check = generateCheck("redis cache", check, status);
+                TelemetryManager.error("redis cache " + CONNECTION_FAIL, e);
             }
-            check = generateCheck("redis cache",check,status);
-            TelemetryManager.log("redis cache "+CONNECTION_SUCCESS);
-        }catch (Exception e){
-            check = generateCheck("redis cache",check,status);
-            TelemetryManager.error("redis cache "+CONNECTION_FAIL,e);
+            allChecks.add(check);
+            check = new HashMap<>();
         }
 
-        allChecks.add(check);
-        check = new HashMap<>();
         try{
             status = IHealthCheckManager.checkCassandraHealth();
             check = generateCheck("cassandra db",check,status);
@@ -66,11 +69,14 @@ public class HealthCheckManager extends BaseManager implements IHealthCheckManag
         }
         allChecks.add(check);
 
-        check = generateCheck("DIAL Max Index", check, dialMaxIndexHealth);
-        if (!dialMaxIndexHealth) {
-            overAllHealth = false;
+        if (JedisFactory.isEnabled()) {
+            check = new HashMap<>();
+            check = generateCheck("DIAL Max Index", check, dialMaxIndexHealth);
+            if (!dialMaxIndexHealth) {
+                overAllHealth = false;
+            }
+            allChecks.add(check);
         }
-        allChecks.add(check);
 
         Response response = OK("checks",allChecks);
         if(!overAllHealth)
