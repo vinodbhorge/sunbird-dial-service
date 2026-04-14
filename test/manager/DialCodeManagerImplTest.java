@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -393,6 +394,36 @@ public class DialCodeManagerImplTest extends CassandraTestSetup {
 	public void validateAdopterContext () throws Exception {
 		Response response = dialCodeMgr.validateContextVocabulary("https://raw.githubusercontent.com/Sunbird-Knowlg/sunbird-dial-service/master/test/resources/context.json");
 		Assert.assertEquals("CLIENT_ERROR", response.getResponseCode().toString());
+	}
+
+	/**
+	 * When Redis is disabled (default in tests), two sequential generation
+	 * requests must produce non-overlapping DIAL codes, proving that the
+	 * Cassandra LWT-based index allocator does not re-use indices.
+	 */
+	@Test
+	public void generateDialCodesProduceUniqueIndicesWhenRedisDisabledTest() throws Exception {
+		String channelId = "channelTest";
+
+		String req1 = "{\"count\":3,\"publisher\": \"mock_pub01\",\"batchCode\":\"test_idx_batch1\"}";
+		Response resp1 = dialCodeMgr.generateDialCode(getRequestMap(req1), channelId);
+		assertEquals("OK", resp1.getResponseCode().toString());
+		@SuppressWarnings("unchecked")
+		Collection<String> codes1 = (Collection<String>) resp1.getResult().get("dialcodes");
+		assertEquals(3, codes1.size());
+
+		String req2 = "{\"count\":3,\"publisher\": \"mock_pub01\",\"batchCode\":\"test_idx_batch2\"}";
+		Response resp2 = dialCodeMgr.generateDialCode(getRequestMap(req2), channelId);
+		assertEquals("OK", resp2.getResponseCode().toString());
+		@SuppressWarnings("unchecked")
+		Collection<String> codes2 = (Collection<String>) resp2.getResult().get("dialcodes");
+		assertEquals(3, codes2.size());
+
+		Set<String> firstBatch = new HashSet<>(codes1);
+		for (String code : codes2) {
+			assertFalse("Index re-use detected: code " + code + " was allocated in both batches",
+					firstBatch.contains(code));
+		}
 	}
 
 	@Test
