@@ -1,0 +1,47 @@
+================================================================================
+DEPENDABOT SUB-AGENT RUN
+Timestamp   : 2026-04-27T00:00:00Z
+Repository  : Sunbird-Knowlg/sunbird-dial-service
+Local Path  : /home/sanketika3/Desktop/Agents/sunbird-dial-service
+Ecosystem(s): Maven
+Default Branch: master
+================================================================================
+
+[INFO] Starting analysis of repository: Sunbird-Knowlg/sunbird-dial-service
+
+[DETECT] Found pom.xml at root → Ecosystem: Maven
+[DETECT] Plugin selected: advanced-security/maven-dependency-submission-action@v4
+         Reason: Latest stable version; captures full transitive dependency graph
+                 for Maven projects via the dependency submission API.
+
+[CHECK]  .github/dependabot.yml → NOT FOUND
+[ACTION] Created .github/dependabot.yml
+         Reason: No existing Dependabot configuration found. File created to enable
+                 automated weekly dependency updates for the maven ecosystem.
+                 GitHub Actions ecosystem deliberately excluded (managed separately).
+
+[CHECK]  .github/workflows/dependency-submission.yml → NOT FOUND
+[ACTION] Created .github/workflows/dependency-submission.yml
+         Reason: No existing dependency-submission workflow found. File created to
+                 submit the full resolved dependency graph (direct + transitive) to
+                 the GitHub Dependency Submission API on every push and pull_request
+                 targeting the master branch.
+         Plugin : advanced-security/maven-dependency-submission-action@v4
+         Triggers: push → master, pull_request → master
+         Permissions: contents: write (required by Dependency Submission API)
+
+[APPROVAL] User approved all changes for commit. Proceeding with git operations.
+
+[GIT] Feature branch created: feature/dependabot-enable-<TIMESTAMP>
+[GIT] Staged: .github/dependabot.yml
+[GIT] Staged: .github/workflows/dependency-submission.yml
+[GIT] Staged: dependabot.log
+[GIT] Committed with message: "chore: enable dependabot and dependency-submission workflow"
+[GIT] Branch pushed to origin.
+
+[PR]  Pull request raised against base branch: master
+      Title: chore: enable dependabot and dependency-submission workflow
+
+================================================================================
+RUN COMPLETE
+================================================================================
