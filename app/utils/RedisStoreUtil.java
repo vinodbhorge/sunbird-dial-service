@@ -1,5 +1,6 @@
 package utils;
 
+import commons.JedisFactory;
 import commons.exception.ServerException;
 import redis.clients.jedis.Jedis;
 
@@ -10,9 +11,8 @@ public class RedisStoreUtil {
 	private static final String KEY_SEPARATOR = ":";
 
 	public static void saveNodeProperty(String graphId, String objectId, String nodeProperty, String propValue) {
-
-		Jedis jedis =
-				getRedisConncetion();
+		if (!JedisFactory.isEnabled()) return;
+		Jedis jedis = getRedisConncetion();
 		try {
 			String redisKey = getNodePropertyKey(graphId, objectId, nodeProperty);
 			jedis.set(redisKey, propValue);
@@ -24,7 +24,7 @@ public class RedisStoreUtil {
 	}
 
 	public static Double getNodePropertyIncVal(String graphId, String objectId, String nodeProperty) {
-
+		if (!JedisFactory.isEnabled()) return null;
 		Jedis jedis = getRedisConncetion();
 		try {
 			String redisKey = getNodePropertyKey(graphId, objectId, nodeProperty);

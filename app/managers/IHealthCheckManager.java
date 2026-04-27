@@ -8,6 +8,7 @@ import com.datastax.driver.core.Session;
 import commons.JedisFactory;
 import commons.dto.Response;
 import elasticsearch.ElasticSearchUtil;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import redis.clients.jedis.Jedis;
 import utils.CassandraConnector;
@@ -18,6 +19,7 @@ public interface IHealthCheckManager {
     Response getAllServiceHealth();
 
     static boolean checkRedisHealth(){
+        if (!JedisFactory.isEnabled()) return true;
         try {
             Jedis jedis = JedisFactory.getRedisConncetion();
             jedis.close();
@@ -33,7 +35,7 @@ public interface IHealthCheckManager {
         try{
             dialcodeManager.init();
             RestHighLevelClient restClient= ElasticSearchUtil.getClient(Constants.DIAL_CODE_INDEX);
-            boolean response = restClient.ping();
+            boolean response = restClient.ping(RequestOptions.DEFAULT);
             return response;
         }catch (Exception e){
 //            e.printStackTrace();
