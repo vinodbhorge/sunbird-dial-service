@@ -280,7 +280,7 @@
                     <artifactId>snappy-java</artifactId>
                 </exclusion>
             </exclusions>
-            <version>1.1.0</version>
+            <version>4.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.xerial.snappy</groupId>
