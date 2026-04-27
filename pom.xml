@@ -12,7 +12,7 @@
     <properties>
         <play2.version>3.0.5</play2.version>
         <play2.plugin.version>1.0.0-rc5</play2.plugin.version>
-        <scala.version>2.13.12</scala.version>
+        <scala.version>3.8.3</scala.version>
         <pekko.version>1.0.3</pekko.version>
         <jackson.version>2.14.3</jackson.version>
         <logback.version>1.4.14</logback.version>
